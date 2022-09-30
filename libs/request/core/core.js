@@ -1,10 +1,10 @@
 import Taro from '@tarojs/taro'
 
-import Interceptor from './interceptor'
-
 // 拦截器
 Taro.addInterceptor((chain) => {
+  const requestParams = chain.requestParams
   console.log('Taro Interceptor')
+  return chain.proceed(requestParams)
 })
 
 const request = (options) => {

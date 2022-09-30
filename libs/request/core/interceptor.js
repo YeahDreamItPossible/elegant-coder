@@ -11,7 +11,7 @@ class Interceptor {
     this.queue = []
   }
 
-  // NOTE: 尽量不要使用匿名函数
+  // NOTE
   use (options) {
     let item
     if (typeof options === 'function') {
@@ -28,22 +28,33 @@ class Interceptor {
 
     // 优先队列
     if (typeof item === 'object') {
-      // if (item.stage) {
-      //   let queue = this.queue.slice()
-      //   let index = -1
-      //   queue.forEach((item, index) => {
-      //   })
-      // }
-      // else {
-      // }
-      this.queue.push(item)
+      if (item.stage) {
+        let queue = this.queue.slice()
+        let index = -1
+        queue.forEach((option, idx) => {
+          if (option.stage > item.stage) {
+            index = idx
+          }
+        })
+
+        if (index === -1) {
+          this.queue.push(item)
+        } else {
+          this.queue.splice(index, 0, item)
+        }
+      }
+      else {
+        this.queue.push(item)
+      }
     }
 
     return this
   }
 
-  // 优先队列
-
+  // TODO:
+  // 移除拦截器
+  eject (id) {
+  }
 }
 
 export default Interceptor

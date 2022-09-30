@@ -1,10 +1,10 @@
-import Loading from './Loading'
+import { LOAD } from '@/network/request/share/const.js'
+import { noop } from '@/network/request/share/index.js'
 
 // 单例模式
-class LoadingManager {
-  constructor (options) {
-    this.options = options
-    this.instance = null
+class LoadingDecorator {
+  constructor (instance) {
+    this.instance = instance
     this.timer = null
   }
 
@@ -34,19 +34,7 @@ class LoadingManager {
 
     const options = this._mergeOptions(config)
 
-    return new Promise((resolve, reject) => {
-      Taro.showLoading({
-        ...options,
-        success (res) {
-          options.success && options.success(res)
-          resolve(res)
-        },
-        fail (err) {
-          options.fail && options.fail(err)
-          reject(err)
-        }
-      })
-    })
+    return this.instance.show(options)
   }
 
   // 延时关闭
@@ -55,7 +43,7 @@ class LoadingManager {
     return new Promise((resolve, reject) => {
       this._clearTimer(this.timer)
       this.timer = setTimeout(() => {
-        Taro.hideLoading().then(res => resolve(res)).catch(err => reject(err))
+        this.instance.hide().then(res => resolve(res)).catch(err => reject(err))
       }, duration)
     })
   }
@@ -64,3 +52,5 @@ class LoadingManager {
     timer && clearTimeout(timer)
   }
 }
+
+export default LoadingDecorator

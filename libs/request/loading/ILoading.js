@@ -1,12 +1,12 @@
 import AbstractMethodError from '../share/AbstractMethodError'
 
 class ILoading {
-  show (config) {
-    throw new AbstractMethodError('[MPLog]: AbstractMethodError: ' + 'abstract method must be override')
+  show () {
+    throw new AbstractMethodError('[MPLog]: AbstractMethodError: ' + 'abstract method must be override' + ' in the ILoading')
   }
 
-  hide (delay) {
-    throw new AbstractMethodError('[MPLog]: AbstractMethodError: ' + 'abstract method must be override')
+  hide () {
+    throw new AbstractMethodError('[MPLog]: AbstractMethodError: ' + 'abstract method must be override' + ' in the ILoading')
   }
 }
 

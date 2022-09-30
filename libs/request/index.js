@@ -1,4 +1,4 @@
-import taroRequest from './core'
+import { instance } from "./core"
 
 // 加载
 import loading from './loading'
@@ -14,25 +14,31 @@ import envConfig from '@/network/env'
  * Request字段扩展
  * _showLoading: 静默加载 默认不显示Loading 设置为true 显示Loading
  * _showMsg: 默认全局错误提示, 设置false 表示 取消全局提示
- * _retServerResponse: 服务端响应
  * _retResponse: 整个响应(包括请求信息)
+ * _retServerResponse: 服务端响应
  * _repeated = true  将会开启防重复
  */
 
 // 项目默认配置
+const getBaseConf = () => ({
+  _showLoading: true,
+  _showMsg: true,
+  _retServerResponse: false,
+  _retResponse: false,
+  _repeated: true
+})
+
+// 框架使用配置
 const getBaseOptions = () => ({
   baseURL: envConfig.baseURL || '/',
   method: 'GET',
   timeout: 30 * 1000,
   complete: _ => _,
-  _showLoading: false,
-  _showMsg: true,
-  _retServerResponse: false,
-  _retResponse: false,
+  ...getBaseConf()
 })
 
 // 配置合并
-const mergeOptions = (baseOptions, options) => {
+const resolver = (baseOptions, options) => {
   let url = options.fullUrl ? options.fullUrl : `${baseOptions.baseURL}/${options.url}`
   let headers = Object.assign({}, baseOptions.headers, options.headers || {})
   let data = options.data || {}
@@ -59,65 +65,65 @@ const mergeOptions = (baseOptions, options) => {
   }
 }
 
-const Utils = {
-  isHeaderJson (contentType) {
-    return contentType.includes('application/json')
+// 注册拦截器
+instance.interceptor.request.use({
+  stage: 1,
+  id: 'PreventRepeat',
+  fn: ({request}, next) => {
+    if (request._repeated) {
+      if (valve.has(request)) {
+        return Promise.reject(new Error('请勿重复请求'))
+      }
+      valve.set(request, Date.now())
+    }
+    next()
   }
-}
+})
+
+instance.interceptor.request.use(({request}, next) => {
+  // 显示Loading
+  if (request._showLoading) {
+    loading.show()
+  }
+  next()
+})
+
+instance.interceptor.response.use(({request, response}, next) => {
+  // 隐藏Loading
+  if (request._showLoading) {
+    loading.hide()
+  }
+  next()
+})
+
+instance.interceptor.response.use(({request, response}, next) => {
+  if (request._retResponse) {
+    return Promise.resolve(response)
+  }
+  else if (request._retServerResponse) {
+    return Promise.resolve(response.data)
+  }
+  else {
+    const {data = {} } = response
+    if (data.code === 0) {
+      request._showMsg && toast.show(data.message)
+      return Promise.resolve(data.data)
+    }
+    else {
+      // TODO: 特殊码处理
+      request._showMsg && toast.show(data.message)
+      return Promise.reject(data)
+    }
+  }
+})
 
 const createRequest = baseOptions => {
   return (options) => {
     return new Promise((resolve, reject) => {
-      const finalOptions = mergeOptions(baseOptions, options)
-
-      // 显示Loading
-      if (finalOptions._showLoading) {
-        loading.show()
-      }
-
-      if (valve.has(finalOptions)) {
-      }
-      valve.set(finalOptions, Date.now())
-
-      taroRequest({ ...finalOptions }).then(res => {
-        // 隐藏Loading
-        if (finalOptions._showLoading) {
-          loading.hide()
-        }
-
-        finalOptions.complete && finalOptions.complete()
-
-        if (finalOptions._retResponse) {
-          resolve(res)
-        }
-        else if (baseOptions._retServerResponse) {
-          resolve(res.data)
-        }
-        else {
-          let { data } = res
-          if (res.statusCode === 200) {
-            if (data.code === 0) {
-              resolve(data.data)
-            } else {
-              // TODO: 特殊码处理
-              finalOptions._showMsg && toast.show(data.message)
-              reject(res.data)
-            }
-          } else {
-            // 非正常标准码
-            finalOptions._showMsg && toast.show(data.message)
-            reject(res)
-          }
-        }
+      const finalOptions = resolver(baseOptions, options)
+      instance.request({ ...finalOptions }).then(res => {
+        resolve(res)
       }).catch(err => {
-        // 隐藏Loading
-        // if (finalOptions._showLoading) {
-        //   loading.hide()
-        // }
-
-        // finalOptions.complete && finalOptions.complete()
-
-        console.log(888, err)
         reject(err)
       })
     })
@@ -126,10 +132,5 @@ const createRequest = baseOptions => {
 
 const baseOptions = getBaseOptions()
 const request = createRequest(baseOptions)
-
-request.interceptor = {
-  request: {},
-  response: {}
-}
 
 export default request

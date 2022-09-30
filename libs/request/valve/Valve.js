@@ -18,7 +18,11 @@ class Valve extends IValve {
   }
 
   set (key, val) {
-    this.cache.set(key, val)
+    try {
+      this.cache.set(key, val)
+    } catch (e) {
+      console.error('[MPLog]: UpexpectedUpdateError: ' + `the error happens when set the key '[${key}]' to value` + ' in the Valve')
+    }
     return this
   }
 
@@ -30,7 +34,7 @@ class Valve extends IValve {
       this.cache.delete(key)
       return true
     } catch (e) {
-      warn('[MPLog]: UnpectedDeleteError: ' + `unpected the key of ${key} is exit but not `, 'in the Valve')
+      console.error('[MPLog]: UnpectedDeleteError: ' + `unpected the key of ${key} is exit but not `, 'in the Valve')
       return false
     }
   }

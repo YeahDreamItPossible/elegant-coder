@@ -1,4 +1,4 @@
-import instance from "./core"
+import taroRequest from './core'
 
 // 加载
 import loading from './loading'
@@ -25,7 +25,7 @@ const getBaseOptions = () => ({
   method: 'GET',
   timeout: 30 * 1000,
   complete: _ => _,
-  _showLoading: false,
+  _showLoading: true,
   _showMsg: true,
   _retServerResponse: false,
   _retResponse: false,
@@ -59,50 +59,16 @@ const resolver = (baseOptions, options) => {
   }
 }
 
-// 注册拦截器
-instance.interceptor.request((request, next) => {
-  if (request._repeated) {
-    if (valve.has(request)) {
-      return Promise.reject(new Error('请勿重复请求'))
-    }
-    valve.set(request, Date.now())
+const Utils = {
+  isHeaderJson (contentType) {
+    return contentType.includes('application/json')
   }
-  next()
-})
-
-instance.interceptor.request((request, next) => {
-  // 显示Loading
-  if (request._showLoading) {
-    loading.show()
-  }
-  next()
-})
-
-instance.interceptor.response((request, response, next) => {
-  // 隐藏Loading
-  if (request._showLoading) {
-    loading.hide()
-  }
-  next()
-})
-
-instance.interceptor.response((request, response, next) => {
-  if (request._retResponse) {
-    next(response)
-  }
-  else if (request._retServerResponse) {
-    next(response.data)
-  }
-  else {
-    next(response)
-  }
-
-})
+}
 
 const createRequest = baseOptions => {
   return (options) => {
     return new Promise((resolve, reject) => {
-      const finalOptions = mergeOptions(baseOptions, options)
+      const finalOptions = resolver(baseOptions, options)
 
       // 显示Loading
       if (finalOptions._showLoading) {
@@ -110,8 +76,8 @@ const createRequest = baseOptions => {
       }
 
       if (valve.has(finalOptions)) {
+        return Promise.reject('请勿重复请求')
       }
-
       valve.set(finalOptions, Date.now())
 
       taroRequest({ ...finalOptions }).then(res => {
@@ -152,9 +118,18 @@ const createRequest = baseOptions => {
 
         // finalOptions.complete && finalOptions.complete()
 
-        console.log(888, err)
         reject(err)
       })
     })
   }
 }
+
+const baseOptions = getBaseOptions()
+const request = createRequest(baseOptions)
+
+request.interceptor = {
+  request: {},
+  response: {}
+}
+
+export default request

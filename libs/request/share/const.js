@@ -4,7 +4,7 @@ export const ERROR = {
 
 export const LOAD = Object.freeze({
   LOADING: '加载中...',
-  HIDE_DELAY_TIME: 600, // loading 延时关闭时间
+  HIDE_DELAY_TIME: 300, // loading 延时关闭时间
 })
 
 export const TOAST = Object.freeze({
