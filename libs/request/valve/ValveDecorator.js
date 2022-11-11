@@ -3,12 +3,16 @@ import Vue from 'vue'
 import Valve from "./Valve"
 import { VALVE } from '../share/const'
 
+// NOTE:
+// 序列化 功能可以暴漏
 const obj2Str = obj => {
   let str = '';
   if (typeof obj === 'object' && obj !== null) {
     Object.keys(obj).forEach((key) => {
       str += `${key}=${obj2Str(obj[key])}`
     })
+  } else {
+    return obj
   }
   return str
 }
